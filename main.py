@@ -1,11 +1,12 @@
 import requests
 import json
+from champions import GetChampionName
 
 apikey = 'RGAPI-85a3a340-e04a-4596-a066-574996513cf2'
 summoner_name = 'Worst Lux Galaxy'
 
 # create base url dictionary for API calls
-with open ('base_urls.json') as JSON:
+with open ('jsons\\base_urls.json', encoding="utf8") as JSON:
     base_urls = json.load(JSON)
 
 # get account ID based on summoner name
@@ -34,5 +35,5 @@ def GetMatchHistory(accountId):
     else:
         return r.json()
 
-
-print(GetMatchHistory(GetAccountID()))
+champ = GetMatchHistory(GetAccountID())['matches'][0]['champion']
+print(GetChampionName(champ))
