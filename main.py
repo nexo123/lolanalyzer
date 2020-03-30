@@ -1,39 +1,34 @@
 import requests
 import json
+import time
 from champions import GetChampionName
+from apimanager import APIManager
+from dbmanager import DBManager
 
-apikey = 'RGAPI-85a3a340-e04a-4596-a066-574996513cf2'
-summoner_name = 'Worst Lux Galaxy'
 
-# create base url dictionary for API calls
-with open ('jsons\\base_urls.json', encoding="utf8") as JSON:
-    base_urls = json.load(JSON)
+def main():
+    API = APIManager('Worst Lux Galaxy')
+    DB = DBManager()
+    # database_connection = DB.create_connection('season2020.db')
+    # DB.close_connection(database_connection)
+    summoner_info = API.get_summoner_info()
+    
+    database = DB.create_connection('season2020.db')
+    values = "NULL, \'" + summoner_info['name'] + "\', \'" + summoner_info['accountId'] + "\', \'" + summoner_info['puuid'] + "\', \'" + summoner_info['id'] + "\'"
 
-# get account ID based on summoner name
+    print(values)
 
-def GetAccountID():
-    """Tries to retrieve encrypted account ID based on summoner name"""
-    url = base_urls['summoner'] + summoner_name
-    headers = {'X-Riot-Token': apikey}
+    DB.insert_into_table(database, 'summoners', values)
 
-    r = requests.get(url, headers = headers)
-    if not (r.status_code == 200):
-        print('Getting account id by summoner name {} failed!'.format(summoner_name))
-        return None
-    else:
-        response_json = r.json()
-        return response_json['accountId']
+    # accountId = API.GetAccountID()
+    # time.sleep(0.5)
+    # match_history = API.GetMatchHistory(accountId)
+    # time.sleep(0.5)
+    # print(API.GetMatchDetail(match_history['matches'][0]['gameId']))
 
-def GetMatchHistory(accountId):
-    url = base_urls['matchhistory'] + accountId + '?queue=420'
-    headers = {'X-Riot-Token': apikey}
+    # champ = GetMatchHistory(GetAccountID())['matches'][1]['champion']
+    # champ = API.GetMatchHistory(API.GetAccountID())['matches'][1]['champion']
+    # print(GetChampionName(champ))
 
-    r = requests.get(url, headers = headers)
-    if not (r.status_code == 200):
-        print('Getting account id by summoner name {} failed!'.format(summoner_name))
-        return None
-    else:
-        return r.json()
-
-champ = GetMatchHistory(GetAccountID())['matches'][0]['champion']
-print(GetChampionName(champ))
+if __name__ == '__main__':
+    main()
