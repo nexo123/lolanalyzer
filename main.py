@@ -3,23 +3,20 @@ import json
 import time
 from champions import GetChampionName
 from apimanager import APIManager
-from dbmanager import DBManager
+import database as db
 
 
 def main():
     API = APIManager('Worst Lux Galaxy')
-    DB = DBManager()
-    # database_connection = DB.create_connection('season2020.db')
-    # DB.close_connection(database_connection)
     summoner_info = API.get_summoner_info()
+
+    matches = API.get_match_history(summoner_info['accountId'])['matches']
+    details = API.get_match_details(matches[0]['gameId'])
     
-    database = DB.create_connection('season2020.db')
+    database = db.create_connection('season2020.db')
     values = "NULL, \'" + summoner_info['name'] + "\', \'" + summoner_info['accountId'] + "\', \'" + summoner_info['puuid'] + "\', \'" + summoner_info['id'] + "\'"
-
-    print(values)
-
-    DB.insert_into_table(database, 'summoners', values)
-
+    db.insert_into_table(database, 'summoners', values)
+    print(details)
     # accountId = API.GetAccountID()
     # time.sleep(0.5)
     # match_history = API.GetMatchHistory(accountId)
