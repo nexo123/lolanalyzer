@@ -67,22 +67,29 @@ def main():
         e_index = 100
         i = 1
         summoner = db.add_summoner(database_connection, (None, summoner_info['name'], summoner_info['accountId'], summoner_info['puuid'], summoner_info['id']))
+        time.sleep(1.5)
 
         while ((not end) and (summoner > 0)):
             matches = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')['matches']
+            time.sleep(1.5)
 
             if not matches is None:
                 for match in matches:
                     match_details = API.get_match_details(match['gameId'])
+                    time.sleep(1.5)
                     match_timeline = API.get_match_timeline(match['gameId'])
-                    time.sleep(2)
+                    time.sleep(1.5)
 
-                    if ((match_details is None) or (match_timeline is None)):
-                        break
+                    if match_timeline is None:
+                        match_timeline = "Unavailable"
+
+                    if match_details is None:
+                        continue
                     else:
-                        match_data = get_match_data(match, match_details, match_timeline, summoner, 1578657600)
+                        match_data = get_match_data(match, match_details, match_timeline, summoner, 1578657600000)
                         if match_data is None:
                             end = True
+                            break
                         participants = get_participants_data(match_details)
                         
                         db.add_match(database_connection, match_data)
