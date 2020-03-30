@@ -2,5 +2,5 @@
     "summoner": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/",
     "matchhistory": "https://euw1.api.riotgames.com/lol/match/v4/matchlists/by-account/",
     "matchdetail": "https://euw1.api.riotgames.com/lol/match/v4/matches/",
-    "matchtimeline": "https://euw1.api.riotgames.com/lol/timelines/by-match/"
+    "matchtimeline": "https://euw1.api.riotgames.com/lol/match/v4/timelines/by-match/"
 }

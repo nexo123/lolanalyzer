@@ -12,22 +12,22 @@ sql_summoners_table = """ CREATE TABLE IF NOT EXISTS summoners (
 
 sql_matches_table = """CREATE TABLE IF NOT EXISTS matches (
                         matchId INTEGER PRIMARY KEY,
-                        gameId integer NOT NULL,
+                        gameId integer NOT NULL UNIQUE,
                         owner integer NOT NULL,
                         season integer NOT NULL,
                         champion integer NOT NULL,
                         role text NOT NULL,
                         lane text NOT NULL,
                         timestamp integer NOT NULL,
-                        timeline blob NOT NULL,
+                        timeline text NOT NULL,
                         gameCreation integer NOT NULL,
-                        game Duration integer NOT NULL,
+                        gameDuration integer NOT NULL,
                         queueId integer NOT NULL,
                         mapId integer NOT NULL,
                         gameVersion text NOT NULL,
                         gameMode text NOT NULL,
                         gameType text NOT NULL,
-                        teams blob NOT NULL,
+                        teams text NOT NULL,
                         FOREIGN KEY (owner) REFERENCES summoners (summoner_id)
                     ); """
 
@@ -38,10 +38,12 @@ sql_patricipants_table = """CREATE TABLE IF NOT EXISTS participants (
                             spell1Id integer NOT NULL,
                             spell2Id integer NOT NULL,
                             stats blob NOT NULL,
+                            role text NOT NULL,
+                            lane text NOT NULL,
                             accountId text NOT NULL,
                             summonerName text NOT NULL,
                             summonerId text NOT NULL,
-                            FOREIGN KEY (matchId) REFERENCES matches (matchId)
+                            FOREIGN KEY (matchId) REFERENCES matches (gameId)
                         ); """
 
 def create_connection(db_file):
@@ -54,12 +56,14 @@ def create_connection(db_file):
     if path.exists(db_file):
         try:
             conn = sqlite3.connect(db_file)
+            conn.execute("PRAGMA foreign_keys = 1")
             return conn
         except Error as e:
             print(e)
     else:
         try:
             conn = sqlite3.connect(db_file)
+            conn.execute("PRAGMA foreign_keys = 1")
             init_database(conn)
             return conn
         except Error as e:
@@ -88,11 +92,35 @@ def init_database(conn):
     except Error as e:
         print(e)
 
-def insert_into_table(conn, table, values):
+def add_summoner(conn, summoner_data):
     try:
         c = conn.cursor()
-        sql = "INSERT INTO " + table + " VALUES (" + values +")"
-        c.execute(sql)
+        sql = """INSERT INTO summoners VALUES (?, ?, ?, ?, ?)"""
+        c.execute(sql, summoner_data)
         conn.commit()
+        return c.lastrowid
     except Error as e:
         print(e)
+        return -1
+
+def add_match(conn, match_data):
+    try:
+        c = conn.cursor()
+        sql = """INSERT INTO matches VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        c.execute(sql, match_data)
+        conn.commit()
+        return c.lastrowid
+    except Error as e:
+        print(e)
+        return -1
+
+def add_participant(conn, participant_data):
+    try:
+        c = conn.cursor()
+        sql = """INSERT INTO participants VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        c.execute(sql, participant_data)
+        conn.commit()
+        return c.lastrowid
+    except Error as e:
+        print(e)
+        return -1
