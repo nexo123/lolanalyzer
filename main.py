@@ -4,6 +4,7 @@ import time
 from champions import GetChampionName
 from apimanager import APIManager
 import database as db
+import configparser
 
 def get_match_data(match, match_details, match_timeline, summoner_id, limiter):
     if int(match['timestamp']) < limiter:
@@ -57,16 +58,19 @@ def get_summoner_data(summoner_info):
     return data
 
 def main():
-    API = APIManager('Worst Lux Galaxy')
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    API = APIManager(config['Summoner']['name'])
     summoner_info = API.get_summoner_info()
-    database_connection = db.create_connection('season2020.db')
+    database_connection = db.create_connection((config['Database']['name'] + '.db'))
     end = False
 
     if not summoner_info is None:
         b_index = 0
         e_index = 100
         i = 1
-        summoner = db.add_summoner(database_connection, (None, summoner_info['name'], summoner_info['accountId'], summoner_info['puuid'], summoner_info['id']))
+        summoner_data = get_summoner_data(summoner_info)
+        summoner = db.add_summoner(database_connection, summoner_data)
         time.sleep(1.5)
 
         while ((not end) and (summoner > 0)):
