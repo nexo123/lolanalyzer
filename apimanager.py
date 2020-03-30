@@ -5,7 +5,7 @@ import configparser
 class APIManager(object):
     
     def __init__(self, summoner_name):
-        self.summoner_name = 'Worst Lux Galaxy'
+        self.summoner_name = summoner_name
         # create base url dictionary for API calls
         with open ('jsons\\base_urls.json', encoding="utf8") as JSON:
             self.base_urls = json.load(JSON)

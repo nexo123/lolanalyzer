@@ -74,13 +74,14 @@ def main():
             if not matches is None:
                 for match in matches:
                     match_details = API.get_match_details(match['gameId'])
+                    time.sleep(2)
                     match_timeline = API.get_match_timeline(match['gameId'])
                     time.sleep(2)
 
                     if ((match_details is None) or (match_timeline is None)):
                         break
                     else:
-                        match_data = get_match_data(match, match_details, match_timeline, summoner, 1578657600)
+                        match_data = get_match_data(match, match_details, match_timeline, summoner, 1578657600000)
                         if match_data is None:
                             end = True
                         participants = get_participants_data(match_details)
