@@ -2,7 +2,7 @@ import requests
 import json
 import configparser
 
-class self(object):
+class APIManager(object):
     
     def __init__(self, summoner_name):
         self.summoner_name = 'Worst Lux Galaxy'
