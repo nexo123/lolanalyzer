@@ -95,7 +95,7 @@ def init_database(conn):
 def add_summoner(conn, summoner_data):
     try:
         c = conn.cursor()
-        sql = """INSERT INTO summoners VALUES (?, ?, ?, ?, ?)"""
+        sql = """INSERT INTO summoners VALUES (?, ?, ?, ?, ?);"""
         c.execute(sql, summoner_data)
         conn.commit()
         return c.lastrowid
@@ -106,7 +106,7 @@ def add_summoner(conn, summoner_data):
 def add_match(conn, match_data):
     try:
         c = conn.cursor()
-        sql = """INSERT INTO matches VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        sql = """INSERT INTO matches VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         c.execute(sql, match_data)
         conn.commit()
         return c.lastrowid
@@ -117,10 +117,30 @@ def add_match(conn, match_data):
 def add_participant(conn, participant_data):
     try:
         c = conn.cursor()
-        sql = """INSERT INTO participants VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        sql = """INSERT INTO participants VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         c.execute(sql, participant_data)
         conn.commit()
         return c.lastrowid
+    except Error as e:
+        print(e)
+        return -1
+
+def get_max_of(conn, what):
+    try:
+        c = conn.cursor()
+        sql = """SELECT MAX({}) FROM {};""".format(what[0], what[1])
+        c.execute(sql)
+        return c.fetchall()[0][0]
+    except Error as e:
+        print(e)
+        return -1
+
+def get_summoner(conn, summoner_id):
+    try:
+        c = conn.cursor()
+        sql = """SELECT summoner_id FROM summoners WHERE summonerId = "{}";""".format(summoner_id)
+        c.execute(sql)
+        return c.fetchall()[0][0]
     except Error as e:
         print(e)
         return -1

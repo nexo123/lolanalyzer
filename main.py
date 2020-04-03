@@ -5,6 +5,9 @@ from champions import GetChampionName
 from apimanager import APIManager
 import database as db
 import configparser
+import logging
+
+SEASON10 = 1578657600000
 
 def get_match_data(match, match_details, match_timeline, summoner_id, limiter):
     if int(match['timestamp']) < limiter:
@@ -58,6 +61,7 @@ def get_summoner_data(summoner_info):
     return data
 
 def main():
+    logging.basicConfig(filename='log.log', level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read('config.ini')
     API = APIManager(config['Summoner']['name'])
@@ -69,11 +73,19 @@ def main():
         b_index = 0
         e_index = 100
         i = 1
-        summoner_data = get_summoner_data(summoner_info)
-        summoner = db.add_summoner(database_connection, summoner_data)
-        time.sleep(1.5)
 
-        while ((not end) and (summoner > 0)):
+        summoner = db.get_summoner(database_connection, summoner_info['id'])
+
+        if summoner == -1:
+            summoner_data = get_summoner_data(summoner_info)
+            summoner = db.add_summoner(database_connection, summoner_data)
+
+        time.sleep(1.5)
+        max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches'))
+        if max_timestamp < SEASON10:
+            max_timestamp = SEASON10
+
+        while not end:
             matches = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')['matches']
             time.sleep(1.5)
 
@@ -85,12 +97,13 @@ def main():
                     time.sleep(1.5)
 
                     if match_timeline is None:
+                        logging.warning("Getting match timeline for matchId {} failed!".format(match['gameId']))
                         match_timeline = "Unavailable"
 
                     if match_details is None:
                         continue
                     else:
-                        match_data = get_match_data(match, match_details, match_timeline, summoner, 1578657600000)
+                        match_data = get_match_data(match, match_details, match_timeline, summoner, max_timestamp)
                         if match_data is None:
                             end = True
                             break
@@ -101,12 +114,21 @@ def main():
                             db.add_participant(database_connection, participant_data)
             else:
                 break
-            print("Epoch {} finished, END = {}".format(i, end))
+            logging.info("Epoch {} finished, END = {}".format(i, end))
             b_index += 100
             e_index += 100
             i += 1
 
     db.close_connection(database_connection)
 
+def test():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    database_connection = db.create_connection((config['Database']['name'] + '.db'))
+    print(db.get_summoner(database_connection, '2bt1NSSLsLBiXmgr4-VcGq-hl6na5GU5z7P0y94WTVwk0Go'))
+    db.close_connection(database_connection)
+
+    
 if __name__ == '__main__':
     main()
+    # test()
