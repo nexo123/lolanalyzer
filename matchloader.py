@@ -7,30 +7,28 @@ import database as db
 import configparser
 import logging
 
-SEASON10 = 1578657599999
+SEASON10 = 1578657600000
 
-def get_match_data(match, match_details, match_timeline, summoner_id, limiter):
-    if int(match['timestamp']) <= limiter:
-        return None
-    else:
-        data = (None,)
-        data += (int(match['gameId']),)
-        data += (summoner_id,)
-        data += (int(match['season']),)
-        data += (int(match['champion']),)
-        data += (str(match['role']),)
-        data += (str(match['lane']),)
-        data += (int(match['timestamp']),)
-        data += (str(match_timeline),)
-        data += (int(match_details['gameCreation']),)
-        data += (int(match_details['gameDuration']),)
-        data += (int(match_details['queueId']),)
-        data += (int(match_details['mapId']),)
-        data += (str(match_details['gameVersion']),)
-        data += (str(match_details['gameMode']),)
-        data += (str(match_details['gameType']),)
-        data += (str(match_details['teams']),)
-        return data
+def get_match_data(match, match_details, match_timeline, summoner_id):
+    data = (None,)
+    data += (int(match['gameId']),)
+    data += (summoner_id,)
+    data += (int(match['season']),)
+    data += (int(match['champion']),)
+    data += (str(match['role']),)
+    data += (str(match['lane']),)
+    data += (int(match['timestamp']),)
+    data += (str(match_timeline),)
+    data += (int(match_details['gameCreation']),)
+    data += (int(match_details['gameDuration']),)
+    data += (int(match_details['queueId']),)
+    data += (int(match_details['mapId']),)
+    data += (str(match_details['gameVersion']),)
+    data += (str(match_details['gameMode']),)
+    data += (str(match_details['gameType']),)
+    data += (str(match_details['teams']),)
+
+    return data
 
 def get_participants_data(match_details):
     participant_list = []
@@ -115,6 +113,11 @@ def main():
                 for match in matches:
                     progress_log.info("Working on match {}...".format(match['gameId']))
 
+                    if int(match['timestamp']) < max_timestamp:
+                        progress_log.info("Timestamp limit reached! Exiting.")
+                        end = True
+                        break
+
                     if db.get_match(database_connection, match['gameId']) != (-1):
                         progress_log.info("Skipping match {}, already exists".format(match['gameId']))
                     else:                        
@@ -132,7 +135,7 @@ def main():
                             continue
                         
                         else:
-                            match_data = get_match_data(match, match_details, match_timeline, summoner, max_timestamp)
+                            match_data = get_match_data(match, match_details, match_timeline, summoner)
                             if match_data is None:
                                 progress_log.warning("Match data empty!")
                                 end = True
