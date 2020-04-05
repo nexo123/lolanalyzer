@@ -4,35 +4,24 @@ import configparser
 
 class APIManager(object):
     
-    def __init__(self, summoner_name):
-        self.summoner_name = summoner_name
+    def __init__(self, api_key):
         # create base url dictionary for API calls
         with open ('jsons\\base_urls.json', encoding="utf8") as JSON:
             self.base_urls = json.load(JSON)
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        self.api_key = config['API']['key']
-    
-    def get_summoner_info(self):
-        """Tries to retrieve encrypted account ID based on summoner name"""
-        url = self.base_urls['summoner_by_name'] + self.summoner_name
-        headers = {'X-Riot-Token': self.api_key}
+        self.api_key = api_key
 
-        r = requests.get(url, headers = headers)
-        if not (r.status_code == 200):
-            print('Getting account id by summoner name {} failed!'.format(self.summoner_name))
-            return None
-        else:
-            return r.json()
-
-    def get_summoner_info_id(self, **kwargs):
+    def get_summoner_info(self, **kwargs):
         """Tries to retrieve summoner details based on provided id"""
-        if 'summonerId' in kwargs:
+        if len(kwargs) == 0:
+            return None
+        elif 'summonerId' in kwargs:
             url = self.base_urls['summoner_by_summonerId'] + kwargs.get("summonerId")
         elif 'accountId' in kwargs:
             url = self.base_urls['summoner_by_accountId'] + kwargs.get("accountId")
         elif 'puuid' in kwargs:
             url = self.base_urls['summoner_by_PUUID'] + kwargs.get("puuid")
+        elif 'name' in kwargs:
+            url = self.base_urls['summoner_by_name'] + kwargs.get("name")
         else:
             return None
 
@@ -40,7 +29,7 @@ class APIManager(object):
         r = requests.get(url, headers = headers)
 
         if not (r.status_code == 200):
-            print('Getting summoner details by {} failed!'.format(kwargs))
+            print('Getting summoner details by {} failed! Status code: {}.'.format(kwargs, r.status_code))
             return None
         else:
             return r.json()

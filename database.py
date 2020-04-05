@@ -155,3 +155,17 @@ def get_summoner(conn, summoner_id):
     except Error as e:
         print(e)
         return -1
+
+def get_match(conn, match_id):
+    try:
+        c = conn.cursor()
+        sql = """SELECT gameId FROM matches WHERE gameId = {};""".format(match_id)
+        c.execute(sql)
+        rows = c.fetchall()
+        if len(rows) > 0:
+            return rows[0][0]
+        else:
+            return -1
+    except Error as e:
+        print(e)
+        return -1
