@@ -20,7 +20,7 @@ class APIManager(object):
 
         r = requests.get(url, headers = headers)
         if not (r.status_code == 200):
-            print('Getting account id by summoner name {} failed!'.format(self.summoner_name))
+            print('Getting account id by summoner name {} failed! Status code: {}.'.format(self.summoner_name, r.status_code))
             return None
         else:
             return r.json()
@@ -40,7 +40,7 @@ class APIManager(object):
         r = requests.get(url, headers = headers)
 
         if not (r.status_code == 200):
-            print('Getting summoner details by {} failed!'.format(kwargs))
+            print('Getting summoner details by {} failed! Status code: {}.'.format(kwargs, r.status_code))
             return None
         else:
             return r.json()

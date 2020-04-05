@@ -76,14 +76,14 @@ def main():
     progress_log = setup_logger('progress', 'log_progress.log')
     config = configparser.ConfigParser()
     config.read('config.ini')
-    API = APIManager(config['Summoner']['name'])
+    API = APIManager(config['Parms']['summoner'])
     summoner_info = API.get_summoner_info()
     database_connection = db.create_connection((config['Database']['name'] + '.db'))
     end = False
 
     if not summoner_info is None:
-        b_index = 0
-        e_index = 100
+        b_index = int(config['Parms']['bIndex'])
+        e_index = int(config['Parms']['eIndex'])
         i = 1
 
         summoner = db.get_summoner(database_connection, summoner_info['id'])
@@ -93,7 +93,8 @@ def main():
             summoner = db.add_summoner(database_connection, summoner_data)
 
         time.sleep(1.4)
-        max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches'))
+        # max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches'))
+        max_timestamp = 0
 
         # clamp max_timestamp
 
@@ -101,6 +102,7 @@ def main():
             max_timestamp = SEASON10
 
         while not end:
+            progress_log.info("Gertting matches between {} and {}.".format(b_index, e_index))
             matches = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')['matches']
             time.sleep(1.4)
 
@@ -110,36 +112,42 @@ def main():
             else:
                 for match in matches:
                     progress_log.info("Working on match {}...".format(match['gameId']))
-                    match_details = API.get_match_details(match['gameId'])
-                    time.sleep(1.4)
-                    match_timeline = API.get_match_timeline(match['gameId'])
-                    time.sleep(1.4)
 
-                    if match_timeline is None:
-                        progress_log.warning("Getting match timeline for matchId {} failed!".format(match['gameId']))
-                        match_timeline = "Unavailable"
+                    if db.get_match(database_connection, match['gameId']) != (-1):
+                        progress_log.info("Skipping match {}, already exists".format(match['gameId']))
+                    else:                        
+                        match_details = API.get_match_details(match['gameId'])
+                        time.sleep(1.4)
+                        match_timeline = API.get_match_timeline(match['gameId'])
+                        time.sleep(1.4)
 
-                    if match_details is None:
-                        progress_log.warning("Getting match details for matchId {} failed!".format(match['gameId']))
-                        continue
-                    else:
-                        match_data = get_match_data(match, match_details, match_timeline, summoner, max_timestamp)
-                        if match_data is None:
-                            end = True
-                            break
-                        participants = get_participants_data(match_details)
-                        db.add_match(database_connection, match_data)
+                        if match_timeline is None:
+                            progress_log.warning("Getting match timeline for matchId {} failed!".format(match['gameId']))
+                            match_timeline = "Unavailable"
 
-                        progress_log.info("Adding participants for match {}...".format(match['gameId']))
+                        if match_details is None:
+                            progress_log.warning("Getting match details for matchId {} failed!".format(match['gameId']))
+                            continue
+                        
+                        else:
+                            match_data = get_match_data(match, match_details, match_timeline, summoner, max_timestamp)
+                            if match_data is None:
+                                progress_log.info("Match data empty")
+                                end = True
+                                break
+                            participants = get_participants_data(match_details)
+                            db.add_match(database_connection, match_data)
 
-                        for participant_data in participants:
-                            participant = API.get_summoner_info_id(summonerId=participant_data[8])
-                            time.sleep(1.4)
-                            participant_data += (int(participant['summonerLevel']),)
-                            participant_data += (int(round(time.time() * 1000)),)
-                            if db.get_summoner(database_connection, participant_data[8]) == (-1):
-                                db.add_summoner(database_connection, get_summoner_data(participant))
-                            db.add_participant(database_connection, participant_data)
+                            progress_log.info("Adding participants for match {}...".format(match['gameId']))
+
+                            for participant_data in participants:
+                                participant = API.get_summoner_info_id(summonerId=participant_data[8])
+                                time.sleep(1.4)
+                                participant_data += (int(participant['summonerLevel']),)
+                                participant_data += (int(round(time.time() * 1000)),)
+                                if db.get_summoner(database_connection, participant_data[8]) == (-1):
+                                    db.add_summoner(database_connection, get_summoner_data(participant))
+                                db.add_participant(database_connection, participant_data)
 
             progress_log.info("Cycle {} finished, END = {}".format(i, end))
             b_index += 100
