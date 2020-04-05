@@ -7,7 +7,9 @@ sql_summoners_table = """ CREATE TABLE IF NOT EXISTS summoners (
                         name text NOT NULL,
                         accountId text NOT NULL,
                         puuid text NOT NULL,
-                        summonerId text NOT NULL UNIQUE
+                        summonerId text NOT NULL UNIQUE,
+                        revisionDate int NOT NULL,
+                        summonerLevel int NOT NULL
                     ); """
 
 sql_matches_table = """CREATE TABLE IF NOT EXISTS matches (
@@ -40,10 +42,11 @@ sql_patricipants_table = """CREATE TABLE IF NOT EXISTS participants (
                             stats blob NOT NULL,
                             role text NOT NULL,
                             lane text NOT NULL,
-                            accountId text NOT NULL,
-                            summonerName text NOT NULL,
                             summonerId text NOT NULL,
-                            FOREIGN KEY (matchId) REFERENCES matches (gameId)
+                            summonerLevel int NOT NULL,
+                            timestamp int NOT NULL,
+                            FOREIGN KEY (matchId) REFERENCES matches (gameId),
+                            FOREIGN KEY (summonerId) REFERENCES summoners (summonerId)
                         ); """
 
 def create_connection(db_file):
@@ -95,7 +98,7 @@ def init_database(conn):
 def add_summoner(conn, summoner_data):
     try:
         c = conn.cursor()
-        sql = """INSERT INTO summoners VALUES (?, ?, ?, ?, ?)"""
+        sql = """INSERT INTO summoners VALUES (?, ?, ?, ?, ?, ?, ?);"""
         c.execute(sql, summoner_data)
         conn.commit()
         return c.lastrowid
@@ -106,7 +109,7 @@ def add_summoner(conn, summoner_data):
 def add_match(conn, match_data):
     try:
         c = conn.cursor()
-        sql = """INSERT INTO matches VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        sql = """INSERT INTO matches VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         c.execute(sql, match_data)
         conn.commit()
         return c.lastrowid
@@ -117,10 +120,38 @@ def add_match(conn, match_data):
 def add_participant(conn, participant_data):
     try:
         c = conn.cursor()
-        sql = """INSERT INTO participants VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        sql = """INSERT INTO participants VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         c.execute(sql, participant_data)
         conn.commit()
         return c.lastrowid
+    except Error as e:
+        print(e)
+        return -1
+
+def get_max_of(conn, what):
+    try:
+        c = conn.cursor()
+        sql = """SELECT MAX({}) FROM {};""".format(what[0], what[1])
+        c.execute(sql)
+        rows = c.fetchall()
+        if rows[0][0] is None:
+            return -1
+        else:
+            return rows[0][0]
+    except Error as e:
+        print(e)
+        return -1
+
+def get_summoner(conn, summoner_id):
+    try:
+        c = conn.cursor()
+        sql = """SELECT summoner_id FROM summoners WHERE summonerId = "{}";""".format(summoner_id)
+        c.execute(sql)
+        rows = c.fetchall()
+        if len(rows) > 0:
+            return rows[0][0]
+        else:
+            return -1
     except Error as e:
         print(e)
         return -1

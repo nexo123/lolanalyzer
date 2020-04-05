@@ -15,7 +15,7 @@ class APIManager(object):
     
     def get_summoner_info(self):
         """Tries to retrieve encrypted account ID based on summoner name"""
-        url = self.base_urls['summoner'] + self.summoner_name
+        url = self.base_urls['summoner_by_name'] + self.summoner_name
         headers = {'X-Riot-Token': self.api_key}
 
         r = requests.get(url, headers = headers)
@@ -25,29 +25,43 @@ class APIManager(object):
         else:
             return r.json()
 
-    def get_match_history(self, accountId, *args, **kwargs):
-        beginIndex = kwargs.get('beginIndex', None)
-        endIndex = kwargs.get('endIndex', None)
-        queue = kwargs.get('queue', None)
-        season = kwargs.get('season', None)
+    def get_summoner_info_id(self, **kwargs):
+        """Tries to retrieve summoner details based on provided id"""
+        if 'summonerId' in kwargs:
+            url = self.base_urls['summoner_by_summonerId'] + kwargs.get("summonerId")
+        elif 'accountId' in kwargs:
+            url = self.base_urls['summoner_by_accountId'] + kwargs.get("accountId")
+        elif 'puuid' in kwargs:
+            url = self.base_urls['summoner_by_PUUID'] + kwargs.get("puuid")
+        else:
+            return None
 
+        headers = {'X-Riot-Token': self.api_key}
+        r = requests.get(url, headers = headers)
+
+        if not (r.status_code == 200):
+            print('Getting summoner details by {} failed!'.format(kwargs))
+            return None
+        else:
+            return r.json()
+
+    def get_match_history(self, accountId, *args, **kwargs):
+        first = True
         options = '?'
-        if not queue is None:
-            options += ('&queue=' + queue)
-        if not beginIndex is None:
-            options += ('&beginIndex=' + beginIndex)
-        if not endIndex is None:
-            options += ('&endIndex=' + endIndex)
-        if not season is None:
-            options += ('&season=' + season)
+        for key, value in kwargs.items():
+            if first:
+                options += str(key) + '=' + str(value)
+                first = False
+            else:
+                options += '&' + str(key) + '=' + str(value)
 
         url = self.base_urls['matchhistory'] + accountId + options
         headers = {'X-Riot-Token': self.api_key}
 
         r = requests.get(url, headers = headers)
         if not (r.status_code == 200):
-           print('Getting match history by account id {} failed! Status code: {}.'.format(accountId, r.status_code))
-           return None
+            print('Getting match history by account id {} failed! Status code: {}.'.format(accountId, r.status_code))
+            return None
         else:
             return r.json()
     
