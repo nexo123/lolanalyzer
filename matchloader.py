@@ -76,14 +76,14 @@ def main():
     progress_log = setup_logger('progress', 'log_progress.log')
     config = configparser.ConfigParser()
     config.read('config.ini')
-    API = APIManager(config['Parms']['summoner'])
-    summoner_info = API.get_summoner_info()
-    database_connection = db.create_connection((config['Database']['name'] + '.db'))
+    API = APIManager(config['API']['key'])
+    summoner_info = API.get_summoner_info(name='Worst Lux Galaxy')
+    database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
     end = False
 
     if not summoner_info is None:
-        b_index = int(config['Parms']['bIndex'])
-        e_index = int(config['Parms']['eIndex'])
+        b_index = int(config['PARMS']['bIndex'])
+        e_index = int(config['PARMS']['eIndex'])
         i = 1
 
         summoner = db.get_summoner(database_connection, summoner_info['id'])
@@ -93,8 +93,10 @@ def main():
             summoner = db.add_summoner(database_connection, summoner_data)
 
         time.sleep(1.4)
-        # max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches'))
-        max_timestamp = 0
+        if bool(config['PARMS']['t_override']):
+            max_timestamp = 0
+        else:
+            max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches')) 
 
         # clamp max_timestamp
 
@@ -132,7 +134,7 @@ def main():
                         else:
                             match_data = get_match_data(match, match_details, match_timeline, summoner, max_timestamp)
                             if match_data is None:
-                                progress_log.info("Match data empty")
+                                progress_log.warning("Match data empty!")
                                 end = True
                                 break
                             participants = get_participants_data(match_details)
@@ -141,7 +143,7 @@ def main():
                             progress_log.info("Adding participants for match {}...".format(match['gameId']))
 
                             for participant_data in participants:
-                                participant = API.get_summoner_info_id(summonerId=participant_data[8])
+                                participant = API.get_summoner_info(summonerId=participant_data[8])
                                 time.sleep(1.4)
                                 participant_data += (int(participant['summonerLevel']),)
                                 participant_data += (int(round(time.time() * 1000)),)
@@ -157,8 +159,10 @@ def main():
     db.close_connection(database_connection)
 
 def test():
-    API = APIManager('Worst Lux Galaxy')
-    API.get_summoner_info_id(accountId='Ayv3ifuXWyAtWzpYBjTmhP1jJbI84taUQSYUdrEOTeMp2jI')
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    API = APIManager(config['API']['key'])
+    API.get_summoner_info(accountId='Ayv3ifuXWyAtWzpYBjTmhP1jJbI84taUQSYUdrEOTeMp2jI')
     
 if __name__ == '__main__':
     main()
