@@ -1,6 +1,9 @@
 {
-    "summoner": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/",
+    "summoner_by_name": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/",
     "matchhistory": "https://euw1.api.riotgames.com/lol/match/v4/matchlists/by-account/",
     "matchdetail": "https://euw1.api.riotgames.com/lol/match/v4/matches/",
-    "matchtimeline": "https://euw1.api.riotgames.com/lol/match/v4/timelines/by-match/"
+    "matchtimeline": "https://euw1.api.riotgames.com/lol/match/v4/timelines/by-match/",
+	"summoner_by_summonerId": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/",
+	"summoner_by_accountId": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-account/",
+	"summoner_by_PUUID": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/"
 }

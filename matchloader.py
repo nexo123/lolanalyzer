@@ -7,10 +7,10 @@ import database as db
 import configparser
 import logging
 
-SEASON10 = 1578657600000
+SEASON10 = 1578657599999
 
 def get_match_data(match, match_details, match_timeline, summoner_id, limiter):
-    if int(match['timestamp']) < limiter:
+    if int(match['timestamp']) <= limiter:
         return None
     else:
         data = (None,)
@@ -44,8 +44,6 @@ def get_participants_data(match_details):
         participant_data += (str(participant['stats']),)
         participant_data += (str(participant['timeline']['role']),)
         participant_data += (str(participant['timeline']['lane']),)
-        participant_data += (str(match_details['participantIdentities'][participant_id - 1]['player']['accountId']),)
-        participant_data += (str(match_details['participantIdentities'][participant_id - 1]['player']['summonerName']),)
         participant_data += (str(match_details['participantIdentities'][participant_id - 1]['player']['summonerId']),)
         participant_list.append(participant_data)
 
@@ -57,11 +55,25 @@ def get_summoner_data(summoner_info):
     data += (str(summoner_info['accountId']),)
     data += (str(summoner_info['puuid']),)
     data += (str(summoner_info['id']),)
+    data += (int(summoner_info['revisionDate']),)
+    data += (int(summoner_info['summonerLevel']),)
 
     return data
 
+def setup_logger(name, log_file, level=logging.INFO):
+    formatter = logging.Formatter('(%(asctime)s) %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')
+
+    handler = logging.FileHandler(log_file)        
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
 def main():
-    logging.basicConfig(filename='log.log', level=logging.DEBUG)
+    progress_log = setup_logger('progress', 'log_progress.log')
     config = configparser.ConfigParser()
     config.read('config.ini')
     API = APIManager(config['Summoner']['name'])
@@ -80,27 +92,35 @@ def main():
             summoner_data = get_summoner_data(summoner_info)
             summoner = db.add_summoner(database_connection, summoner_data)
 
-        time.sleep(1.5)
+        time.sleep(1.4)
         max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches'))
+
+        # clamp max_timestamp
+
         if max_timestamp < SEASON10:
             max_timestamp = SEASON10
 
         while not end:
             matches = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')['matches']
-            time.sleep(1.5)
+            time.sleep(1.4)
 
-            if not matches is None:
+            if matches is None:
+                progress_log.warning("Getting matches between {} and {} failed!".format(b_index, e_index))
+                break
+            else:
                 for match in matches:
+                    progress_log.info("Working on match {}...".format(match['gameId']))
                     match_details = API.get_match_details(match['gameId'])
-                    time.sleep(1.5)
+                    time.sleep(1.4)
                     match_timeline = API.get_match_timeline(match['gameId'])
-                    time.sleep(1.5)
+                    time.sleep(1.4)
 
                     if match_timeline is None:
-                        logging.warning("Getting match timeline for matchId {} failed!".format(match['gameId']))
+                        progress_log.warning("Getting match timeline for matchId {} failed!".format(match['gameId']))
                         match_timeline = "Unavailable"
 
                     if match_details is None:
+                        progress_log.warning("Getting match details for matchId {} failed!".format(match['gameId']))
                         continue
                     else:
                         match_data = get_match_data(match, match_details, match_timeline, summoner, max_timestamp)
@@ -108,13 +128,20 @@ def main():
                             end = True
                             break
                         participants = get_participants_data(match_details)
-                        
                         db.add_match(database_connection, match_data)
+
+                        progress_log.info("Adding participants for match {}...".format(match['gameId']))
+
                         for participant_data in participants:
+                            participant = API.get_summoner_info_id(summonerId=participant_data[8])
+                            time.sleep(1.4)
+                            participant_data += (int(participant['summonerLevel']),)
+                            participant_data += (int(round(time.time() * 1000)),)
+                            if db.get_summoner(database_connection, participant_data[8]) == (-1):
+                                db.add_summoner(database_connection, get_summoner_data(participant))
                             db.add_participant(database_connection, participant_data)
-            else:
-                break
-            logging.info("Epoch {} finished, END = {}".format(i, end))
+
+            progress_log.info("Cycle {} finished, END = {}".format(i, end))
             b_index += 100
             e_index += 100
             i += 1
@@ -122,12 +149,8 @@ def main():
     db.close_connection(database_connection)
 
 def test():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    database_connection = db.create_connection((config['Database']['name'] + '.db'))
-    print(db.get_summoner(database_connection, '2bt1NSSLsLBiXmgr4-VcGq-hl6na5GU5z7P0y94WTVwk0Go'))
-    db.close_connection(database_connection)
-
+    API = APIManager('Worst Lux Galaxy')
+    API.get_summoner_info_id(accountId='Ayv3ifuXWyAtWzpYBjTmhP1jJbI84taUQSYUdrEOTeMp2jI')
     
 if __name__ == '__main__':
     main()
