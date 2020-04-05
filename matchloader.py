@@ -93,7 +93,7 @@ def main():
             summoner = db.add_summoner(database_connection, summoner_data)
 
         time.sleep(1.4)
-        if bool(config['PARMS']['t_override']):
+        if bool(int(config['PARMS']['t_override'])):
             max_timestamp = 0
         else:
             max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches')) 
