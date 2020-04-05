@@ -97,7 +97,6 @@ def main():
             max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches')) 
 
         # clamp max_timestamp
-
         if max_timestamp < SEASON10:
             max_timestamp = SEASON10
 
@@ -133,7 +132,6 @@ def main():
                         if match_details is None:
                             progress_log.warning("Getting match details for matchId {} failed!".format(match['gameId']))
                             continue
-                        
                         else:
                             match_data = get_match_data(match, match_details, match_timeline, summoner)
                             if match_data is None:
