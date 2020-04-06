@@ -7,7 +7,7 @@ import database as db
 import configparser
 import logging
 
-SEASON10 = 1578657600000
+SEASON10 = 1578657600000 # Timestamp in miliseconds - GMT: Friday, 10 January 2020 12:00:00 - season 10 start
 
 def get_match_data(match, match_details, match_timeline, summoner_id):
     data = (None,)
@@ -75,7 +75,7 @@ def main():
     config = configparser.ConfigParser()
     config.read('config.ini')
     API = APIManager(config['API']['key'])
-    summoner_info = API.get_summoner_info(name='Worst Lux Galaxy')
+    summoner_info = API.get_summoner_info(name=config['PARMS']['summoner'])
     database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
     end = False
 
@@ -160,10 +160,7 @@ def main():
     db.close_connection(database_connection)
 
 def test():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    API = APIManager(config['API']['key'])
-    API.get_summoner_info(accountId='Ayv3ifuXWyAtWzpYBjTmhP1jJbI84taUQSYUdrEOTeMp2jI')
+    return
     
 if __name__ == '__main__':
     main()
