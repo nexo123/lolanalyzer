@@ -10,6 +10,7 @@ __pycache__/
 *.exe
 *.db
 *.ini
+*.ini.dist
 
 # VisualStudioCode
 .vscode/

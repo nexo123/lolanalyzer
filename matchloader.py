@@ -76,6 +76,8 @@ def main():
     config.read('config.ini')
     API = APIManager(config['API']['key'])
     summoner_info = API.get_summoner_info(name=config['PARMS']['summoner'])
+    time.sleep(1.4)
+
     database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
     end = False
 
@@ -90,7 +92,6 @@ def main():
             summoner_data = get_summoner_data(summoner_info)
             summoner = db.add_summoner(database_connection, summoner_data)
 
-        time.sleep(1.4)
         if bool(int(config['PARMS']['t_override'])):
             max_timestamp = 0
         else:
