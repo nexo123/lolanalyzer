@@ -1,6 +1,5 @@
 import requests
 import json
-import configparser
 
 class APIManager(object):
     
@@ -12,7 +11,7 @@ class APIManager(object):
 
     def get_summoner_info(self, **kwargs):
         """Tries to retrieve summoner details based on provided id"""
-        if len(kwargs) == 0:
+        if len(kwargs) != 1:
             return None
         elif 'summonerId' in kwargs:
             url = self.base_urls['summoner_by_summonerId'] + kwargs.get("summonerId")
@@ -34,12 +33,13 @@ class APIManager(object):
         else:
             return r.json()
 
-    def get_match_history(self, accountId, *args, **kwargs):
+    def get_match_history(self, accountId, **kwargs):
+        """Tries to retrieve match history for a summoner identified by accountId"""
         first = True
-        options = '?'
+        options = ''
         for key, value in kwargs.items():
             if first:
-                options += str(key) + '=' + str(value)
+                options += '?' + str(key) + '=' + str(value)
                 first = False
             else:
                 options += '&' + str(key) + '=' + str(value)
@@ -55,6 +55,7 @@ class APIManager(object):
             return r.json()
     
     def get_match_details(self, matchId):
+        """Tries to retrieve match details based on provided matchId"""
         url = self.base_urls['matchdetail'] + str(matchId)
         headers = {'X-Riot-Token': self.api_key}
 

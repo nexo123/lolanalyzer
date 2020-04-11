@@ -156,16 +156,41 @@ def get_summoner(conn, summoner_id):
         print(e)
         return -1
 
-def get_match(conn, match_id):
+def get_match(conn, match_id, parms="gameId"):
     try:
         c = conn.cursor()
-        sql = """SELECT gameId FROM matches WHERE gameId = {};""".format(match_id)
+        sql = """SELECT {} FROM matches WHERE gameId = {};""".format(parms, match_id)
         c.execute(sql)
         rows = c.fetchall()
         if len(rows) > 0:
             return rows[0][0]
         else:
             return -1
+    except Error as e:
+        print(e)
+        return -1
+
+def get_missing_timelines(conn):
+    try:
+        c = conn.cursor()
+        sql = """SELECT gameId FROM matches WHERE timeline = "Unavailable";"""
+        c.execute(sql)
+        rows = c.fetchall()
+        if len(rows) > 0:
+            return rows
+        else:
+            return -1
+    except Error as e:
+        print(e)
+        return -1
+
+def update_timeline(conn, matchId, timeline):
+    try:
+        c = conn.cursor()
+        sql = """UPDATE matches SET timeline = "{}" WHERE gameId = {};""".format(timeline, matchId)
+        rows = c.execute(sql).rowcount
+        conn.commit()
+        return rows
     except Error as e:
         print(e)
         return -1

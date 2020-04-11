@@ -1,13 +1,12 @@
 import requests
 import json
 import time
-from champions import GetChampionName
 from apimanager import APIManager
 import database as db
 import configparser
 import logging
 
-SEASON10 = 1578657600000
+SEASON10 = 1578657600000 # Timestamp in miliseconds - GMT: Friday, 10 January 2020 12:00:00 - season 10 start
 
 def get_match_data(match, match_details, match_timeline, summoner_id):
     data = (None,)
@@ -75,7 +74,9 @@ def main():
     config = configparser.ConfigParser()
     config.read('config.ini')
     API = APIManager(config['API']['key'])
-    summoner_info = API.get_summoner_info(name='Worst Lux Galaxy')
+    summoner_info = API.get_summoner_info(name=config['PARMS']['summoner'])
+    time.sleep(1.4)
+
     database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
     end = False
 
@@ -90,7 +91,6 @@ def main():
             summoner_data = get_summoner_data(summoner_info)
             summoner = db.add_summoner(database_connection, summoner_data)
 
-        time.sleep(1.4)
         if bool(int(config['PARMS']['t_override'])):
             max_timestamp = 0
         else:
@@ -159,12 +159,38 @@ def main():
 
     db.close_connection(database_connection)
 
-def test():
+def fix_timelines():
+    progress_log = setup_logger('progress', 'log_progress.log')
     config = configparser.ConfigParser()
     config.read('config.ini')
     API = APIManager(config['API']['key'])
-    API.get_summoner_info(accountId='Ayv3ifuXWyAtWzpYBjTmhP1jJbI84taUQSYUdrEOTeMp2jI')
+
+    database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
+
+    progress_log.info("Trying to fix missing timelines!")
+
+    matches = db.get_missing_timelines(database_connection)
+
+    if matches == (-1):
+        progress_log.info("No missing timelines found!")
+        return
+
+
+
+    for match in matches:
+        progress_log.info("Working on match {}...".format(match[0]))
+        match_timeline = API.get_match_timeline(match[0])
+        time.sleep(1.4)
+
+        if match_timeline is None:
+            progress_log.warning("Getting match timeline for matchId {} failed!".format(match[0]))
+            continue
+
+        db.update_timeline(database_connection, match[0], match_timeline)
+
+def test():
+    return
     
 if __name__ == '__main__':
     main()
-    # test()
+    # fix_timelines()
