@@ -1,7 +1,6 @@
 import requests
 import json
 import time
-from champions import GetChampionName
 from apimanager import APIManager
 import database as db
 import configparser
@@ -160,9 +159,38 @@ def main():
 
     db.close_connection(database_connection)
 
+def fix_timelines():
+    progress_log = setup_logger('progress', 'log_progress.log')
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    API = APIManager(config['API']['key'])
+
+    database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
+
+    progress_log.info("Trying to fix missing timelines!")
+
+    matches = db.get_missing_timelines(database_connection)
+
+    if matches == (-1):
+        progress_log.info("No missing timelines found!")
+        return
+
+
+
+    for match in matches:
+        progress_log.info("Working on match {}...".format(match[0]))
+        match_timeline = API.get_match_timeline(match[0])
+        time.sleep(1.4)
+
+        if match_timeline is None:
+            progress_log.warning("Getting match timeline for matchId {} failed!".format(match[0]))
+            continue
+
+        db.update_timeline(database_connection, match[0], match_timeline)
+
 def test():
     return
     
 if __name__ == '__main__':
     main()
-    # test()
+    # fix_timelines()
