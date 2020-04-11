@@ -70,9 +70,10 @@ def setup_logger(name, log_file, level=logging.INFO):
     return logger
 
 def main():
-    progress_log = setup_logger('progress', 'log_progress.log')
+    
     config = configparser.ConfigParser()
     config.read('config.ini')
+    progress_log = setup_logger('progress', str(config['PARMS']['s_logfile']) + '.log')
     API = APIManager(config['API']['key'])
     summoner_info = API.get_summoner_info(name=config['PARMS']['summoner'])
     time.sleep(1.4)
@@ -106,7 +107,7 @@ def main():
             time.sleep(1.4)
 
             if matches is None:
-                progress_log.warning("Getting matches between {} and {} failed!".format(b_index, e_index))
+                progress_log.error("Getting matches between {} and {} failed!".format(b_index, e_index))
                 break
             else:
                 for match in matches:
@@ -135,7 +136,7 @@ def main():
                         else:
                             match_data = get_match_data(match, match_details, match_timeline, summoner)
                             if match_data is None:
-                                progress_log.warning("Match data empty!")
+                                progress_log.error("Match data empty!")
                                 end = True
                                 break
                             participants = get_participants_data(match_details)
@@ -146,7 +147,11 @@ def main():
                             for participant_data in participants:
                                 participant = API.get_summoner_info(summonerId=participant_data[8])
                                 time.sleep(1.4)
-                                participant_data += (int(participant['summonerLevel']),)
+                                if participant is None:
+                                    progress_log.warning("Summoner info empty!")
+                                    participant_data += (999,)
+                                else:
+                                    participant_data += (int(participant['summonerLevel']),)
                                 participant_data += (int(round(time.time() * 1000)),)
                                 if db.get_summoner(database_connection, participant_data[8]) == (-1):
                                     db.add_summoner(database_connection, get_summoner_data(participant))
@@ -160,9 +165,9 @@ def main():
     db.close_connection(database_connection)
 
 def fix_timelines():
-    progress_log = setup_logger('progress', 'log_progress.log')
     config = configparser.ConfigParser()
     config.read('config.ini')
+    progress_log = setup_logger('progress', str(config['PARMS']['s_logfile']) + '.log')
     API = APIManager(config['API']['key'])
 
     database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
