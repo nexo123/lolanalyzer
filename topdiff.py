@@ -117,9 +117,9 @@ def evaluate(role, timeframe):
             elif value['participantId'] == team200_stats['participantId']:
                 team200_gold = value['totalGold']
         
-        if (team100_gold > team200_gold) and team100_stats['win']:
+        if (team100_gold > team200_gold + 500) and team100_stats['win']:
             counter += 1
-        elif (team100_gold < team200_gold) and team200_stats['win']:
+        elif (team100_gold < team200_gold + 500) and team200_stats['win']:
             counter += 1
     
     return (len(data), counter)

@@ -101,8 +101,10 @@ def main():
         if max_timestamp < SEASON10:
             max_timestamp = SEASON10
 
+        total_matches = 0
+
         while not end:
-            progress_log.info("Gertting matches between {} and {}.".format(b_index, e_index))
+            progress_log.info("Getting matches between {} and {}.".format(b_index, e_index))
             matches = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')['matches']
             time.sleep(1.4)
 
@@ -112,6 +114,7 @@ def main():
             else:
                 for match in matches:
                     progress_log.info("Working on match {}...".format(match['gameId']))
+                    total_matches += 1
 
                     if int(match['timestamp']) < max_timestamp:
                         progress_log.info("Timestamp limit reached! Exiting.")
@@ -146,13 +149,45 @@ def main():
 
                             for participant_data in participants:
                                 participant = API.get_summoner_info(summonerId=participant_data[8])
-                                time.sleep(1.4)
+                                time.sleep(1.3)
+                                
                                 if participant is None:
                                     progress_log.warning("Summoner info empty!")
                                     participant_data += (999,)
                                 else:
                                     participant_data += (int(participant['summonerLevel']),)
+
+                                ranked_info = API.get_summoner_ranked_info(participant_data[8])
+                                time.sleep(1.3)
+
                                 participant_data += (int(round(time.time() * 1000)),)
+
+                                if ranked_info is None:
+                                    progress_log.warning("Ranked info not available!")
+                                    participant_data += ("Unavailable",)
+                                    participant_data += (-1,)
+                                    participant_data += (-1,)
+
+                                elif len(ranked_info) == 0:
+                                    participant_data += ("Unranked",)
+                                    participant_data += (-1,)
+                                    participant_data += (-1,)
+
+                                else:
+                                    flag = False
+                                    for ranked in ranked_info:
+                                        if ranked['queueType'] == "RANKED_SOLO_5x5":
+                                            participant_data += (str(ranked['tier']) + " " + str(ranked['rank']),)
+                                            participant_data += (int(ranked['wins']),)
+                                            participant_data += (int(ranked['losses']),)
+                                            flag = True
+                                    if not flag:
+                                        progress_log.info("Soloqueue rank for summoner {} not found, treating as unranked...".format(participant_data[8]))
+                                        participant_data += ("Unranked",)
+                                        participant_data += (-1,)
+                                        participant_data += (-1,)
+
+
                                 if db.get_summoner(database_connection, participant_data[8]) == (-1):
                                     db.add_summoner(database_connection, get_summoner_data(participant))
                                 db.add_participant(database_connection, participant_data)
@@ -163,6 +198,8 @@ def main():
             i += 1
 
     db.close_connection(database_connection)
+
+    progress_log.info("Total matches loaded: {}".format(total_matches))
 
 def fix_timelines():
     config = configparser.ConfigParser()
@@ -180,8 +217,6 @@ def fix_timelines():
         progress_log.info("No missing timelines found!")
         return
 
-
-
     for match in matches:
         progress_log.info("Working on match {}...".format(match[0]))
         match_timeline = API.get_match_timeline(match[0])
@@ -193,9 +228,57 @@ def fix_timelines():
 
         db.update_timeline(database_connection, match[0], match_timeline)
 
-def test():
-    return
+def fix_ranks():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    progress_log = setup_logger('progress', str(config['PARMS']['s_logfile']) + '.log')
+    API = APIManager(config['API']['key'])
+    database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
+    progress_log.info("Trying to fix missing ranked info!")
+
+    summoners = db.get_missing_ranks(database_connection)
+
+    if summoners == (-1):
+        progress_log.info("No missing rankings found!")
+        return
+    
+    for summoner in summoners:
+        progress_log.info("Working on summoner {}, match {}...".format(summoner[0], summoner[1]))
+        ranked_info = API.get_summoner_ranked_info(summoner[0])
+        time.sleep(1.3)
+
+        if ranked_info is None:
+            progress_log.warning("Getting summoner ranked info for summoner {} failed!".format(summoner[0]))
+            continue
+
+        if len(ranked_info) == 0:
+            progress_log.warning("Ranked info for summoner {} empty! Treating as unraked!".format(summoner[0]))
+            rank = str("Unranked")
+            wins = -1
+            losses = -1
+            db.update_ranking(database_connection, summoner[0], summoner[1], rank, wins, losses)
+            continue
+
+        flag = False
+        for ranked in ranked_info:
+            if ranked['queueType'] == "RANKED_SOLO_5x5":
+                rank = str(ranked['tier']) + " " + str(ranked['rank'])
+                wins = int(ranked['wins'])
+                losses = int(ranked['losses'])
+                db.update_ranking(database_connection, summoner[0], summoner[1], rank, wins, losses)
+                flag = True
+        
+        if not flag:
+            progress_log.info("Soloqueue rank for summoner {} not found, treating as unranked...".format(summoner[0]))
+            rank = str("Unranked")
+            wins = -1
+            losses = -1
+            db.update_ranking(database_connection, summoner[0], summoner[1], rank, wins, losses)
+
+
+
     
 if __name__ == '__main__':
     main()
     # fix_timelines()
+    # fix_ranks()
