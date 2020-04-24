@@ -11,7 +11,7 @@ SEASON10 = 1578657600000 # Timestamp in miliseconds - GMT: Friday, 10 January 20
 def get_match_data(match, match_details, match_timeline, summoner_id):
     data = (None,)
     data += (int(match['gameId']),)
-    data += (summoner_id,)
+    data += (int(summoner_id),)
     data += (int(match['season']),)
     data += (int(match['champion']),)
     data += (str(match['role']),)
@@ -70,15 +70,19 @@ def setup_logger(name, log_file, level=logging.INFO):
     return logger
 
 def main():
-    
+    # Read the config file
     config = configparser.ConfigParser()
     config.read('config.ini')
+    # Setup progress logger
     progress_log = setup_logger('progress', str(config['PARMS']['s_logfile']) + '.log')
+    # Init database connection and API manager
+    database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
     API = APIManager(config['API']['key'])
+
+
+
     summoner_info = API.get_summoner_info(name=config['PARMS']['summoner'])
     time.sleep(1.4)
-
-    database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
     end = False
 
     if not summoner_info is None:
@@ -97,12 +101,13 @@ def main():
         else:
             max_timestamp = db.get_max_of(database_connection, ('timestamp', 'matches')) 
 
-        # clamp max_timestamp
+        # Clamp max_timestamp
         if max_timestamp < SEASON10:
             max_timestamp = SEASON10
 
         total_matches = 0
 
+        # Main loop starts here 
         while not end:
             progress_log.info("Getting matches between {} and {}.".format(b_index, e_index))
             matches = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')['matches']
@@ -114,7 +119,6 @@ def main():
             else:
                 for match in matches:
                     progress_log.info("Working on match {}...".format(match['gameId']))
-                    total_matches += 1
 
                     if int(match['timestamp']) < max_timestamp:
                         progress_log.info("Timestamp limit reached! Exiting.")
@@ -137,13 +141,15 @@ def main():
                             progress_log.warning("Getting match details for matchId {} failed!".format(match['gameId']))
                             continue
                         else:
-                            match_data = get_match_data(match, match_details, match_timeline, summoner)
+                            match_data = get_match_data(match, match_details, match_timeline, summoner[0][0])
                             if match_data is None:
                                 progress_log.error("Match data empty!")
                                 end = True
                                 break
+
                             participants = get_participants_data(match_details)
                             db.add_match(database_connection, match_data)
+                            total_matches += 1
 
                             progress_log.info("Adding participants for match {}...".format(match['gameId']))
 
@@ -200,6 +206,10 @@ def main():
     db.close_connection(database_connection)
 
     progress_log.info("Total matches loaded: {}".format(total_matches))
+
+
+
+
 
 def fix_timelines():
     config = configparser.ConfigParser()

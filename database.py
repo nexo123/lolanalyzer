@@ -148,11 +148,11 @@ def get_max_of(conn, what):
 def get_summoner(conn, summoner_id):
     try:
         c = conn.cursor()
-        sql = """SELECT summoner_id FROM summoners WHERE summonerId = "{}";""".format(summoner_id)
+        sql = """SELECT * FROM summoners WHERE summonerId = "{}";""".format(summoner_id)
         c.execute(sql)
         rows = c.fetchall()
         if len(rows) > 0:
-            return rows[0][0]
+            return rows
         else:
             return -1
     except Error as e:
@@ -190,7 +190,7 @@ def get_missing_timelines(conn):
 def get_missing_ranks(conn):
     try:
         c = conn.cursor()
-        sql = """SELECT p.summonerId, p.matchId FROM participants p WHERE ranking = "Unavailable" OR wins = -1 OR losses = -1;"""
+        sql = """SELECT p.summonerId, p.matchId FROM participants p WHERE ranking = "Unavailable";"""
         c.execute(sql)
         rows = c.fetchall()
         if len(rows) > 0:
