@@ -31,8 +31,9 @@ def main():
 
     snowball = 0
     anti_snowball = 0
-    length_limit = 1769
+    length_limit = 1800
     game_lengths = []
+    n_games = 0
 
     for team in team_info:
         team_str = str(team[0])
@@ -42,21 +43,23 @@ def main():
         game_length = team[1]
         game_lengths.append(team[1])
         
-        if team_100['win'] == 'Win' and team_100['firstTower'] == True and game_length <= length_limit:
-            snowball += 1
-        if team_200['win'] == 'Win' and team_200['firstTower'] == True and game_length <= length_limit:
-            snowball += 1
-        
-        if team_100['win'] == 'Win' and team_100['firstTower'] == False and game_length <= length_limit:
-            anti_snowball += 1
-        if team_200['win'] == 'Win' and team_200['firstTower'] == False and game_length <= length_limit:
-            anti_snowball += 1
+        if game_length <= length_limit:
+            n_games += 1
+            if team_100['win'] == 'Win' and team_100['firstTower'] == True:
+                snowball += 1
+            if team_200['win'] == 'Win' and team_200['firstTower'] == True:
+                snowball += 1
+            
+            if team_100['win'] == 'Win' and team_100['firstTower'] == False:
+                anti_snowball += 1
+            if team_200['win'] == 'Win' and team_200['firstTower'] == False:
+                anti_snowball += 1
 
 
-    print("1st turret + win + <= 25 minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (snowball, len(team_info), round(snowball/len(team_info)*100, 2)))
-    print("not 1st turret + win + <= 25 minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (anti_snowball, len(team_info), round(anti_snowball/len(team_info)*100, 2)))
+    print("1st turret + win + <= %.2f minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (round(length_limit/60, 2), snowball, n_games, round(snowball/n_games*100, 2)))
+    print("not 1st turret + win + <= %.2f minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (round(length_limit/60, 2), anti_snowball, n_games, round(anti_snowball/n_games*100, 2)))
         
-    print("90th percentile of game length: %.2f, average: %.2f " % (round(np.percentile(game_lengths, 90), 2), round(np.average(game_lengths), 2)))
+    print("67th percentile of game length: %.2f, average: %.2f " % (round(np.percentile(game_lengths, 67), 2), round(np.average(game_lengths), 2)))
 
     db.close_connection(database_connection)
 

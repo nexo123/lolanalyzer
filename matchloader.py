@@ -164,7 +164,7 @@ def main():
                                     participant_data += (int(participant['summonerLevel']),)
 
                                 ranked_info = API.get_summoner_ranked_info(participant_data[8])
-                                time.sleep(1.3)
+                                time.sleep(1.35)
 
                                 participant_data += (int(round(time.time() * 1000)),)
 
@@ -199,13 +199,15 @@ def main():
                                 db.add_participant(database_connection, participant_data)
 
             progress_log.info("Cycle {} finished, END = {}".format(i, end))
+
+            progress_log.info("Total matches loaded: {}".format(total_matches))
             b_index += 100
             e_index += 100
             i += 1
 
     db.close_connection(database_connection)
 
-    progress_log.info("Total matches loaded: {}".format(total_matches))
+    
 
 
 
@@ -285,6 +287,7 @@ def fix_ranks():
             losses = -1
             db.update_ranking(database_connection, summoner[0], summoner[1], rank, wins, losses)
 
+ 
 
 
     
