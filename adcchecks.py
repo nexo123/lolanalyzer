@@ -5,6 +5,8 @@ import configparser
 import logging
 import database as db
 import json
+import numpy as np
+from tabulate import tabulate
 
 def get_data(conn):
     try:
@@ -16,6 +18,28 @@ def get_data(conn):
     except Error as e:
         print(e)
         return -1
+
+def get_stats(conn):
+    try:
+        c = conn.cursor()
+        sql = """SELECT p.stats
+                FROM participants p
+                WHERE p.role="DUO_CARRY" AND p.lane="BOTTOM" AND p.summonerId IN
+                (
+                    SELECT s.summonerId
+                    FROM summoners s
+                    WHERE name = "Clumsy Void Girl"
+                )
+                ORDER BY p.timestamp DESC;"""
+        c.execute(sql)
+        return c.fetchall()
+    except Error as e:
+        print(e)
+        return -1
+
+def scaling(base, growth, n):
+    return base + growth * (n - 1) * (0.7025 + 0.0175 * (n - 1))
+
     
 def main():
     config = configparser.ConfigParser()
@@ -72,6 +96,36 @@ def main():
     print(len(adc_max))
     
     print("ADC most damage in: %d games, Total games: %d, Ratio: %f %%" % (len(adc_max), len(max_damages), len(adc_max)/len(max_damages)*100))
+
+
+def check_levels():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
+
+    data = get_stats(database_connection)
+
+    levels = []
+
+    for data_part in data:
+        stats = eval(data_part[0])
+        levels.append(stats['champLevel'])
+
+    nth_percentile = 75
+
+    growth = 2
+    base = 30
+
+    diffs = [(n, scaling(base, growth, n)) for n in range(1, 19)]
+
+    print(tabulate(diffs, headers=["level", "diff"]))
+
+    print("Median: %.1f, Mean: %.1f, %dth percentile: %.1f" % (round(np.median(levels), 1), round(np.mean(levels), 1), nth_percentile, round(np.percentile(levels, nth_percentile), 1)))
+    # print(np.std(levels))
+    # print(np.var(levels))
+
+
     
 if __name__ == '__main__':
-    main()
+    # main()
+    check_levels()

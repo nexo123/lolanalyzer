@@ -8,6 +8,7 @@ import time
 import json
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 
 def get_game_info(conn):
@@ -24,13 +25,15 @@ def main():
     config = configparser.ConfigParser()
     config.read('config.ini')
     database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
+    # database_connection = db.create_connection("season2020_lProfessor.db")
 
     team_info = get_game_info(database_connection)
 
-    counter = 0
     snowball = 0
     anti_snowball = 0
-    game_lengts = []
+    length_limit = 1800
+    game_lengths = []
+    n_games = 0
 
     for team in team_info:
         team_str = str(team[0])
@@ -38,39 +41,25 @@ def main():
         team_100 = eval(str(team_dict[0]))
         team_200 = eval(str(team_dict[1]))
         game_length = team[1]
-        game_lengts.append(team[1])
-
-
-        counter += 1
+        game_lengths.append(team[1])
         
-        if team_100['win'] == 'Win' and team_100['firstTower'] == True and game_length <= 1500:
-            snowball += 1
-        if team_200['win'] == 'Win' and team_200['firstTower'] == True and game_length <= 1500:
-            snowball += 1
+        if game_length <= length_limit:
+            n_games += 1
+            if team_100['win'] == 'Win' and team_100['firstTower'] == True:
+                snowball += 1
+            if team_200['win'] == 'Win' and team_200['firstTower'] == True:
+                snowball += 1
+            
+            if team_100['win'] == 'Win' and team_100['firstTower'] == False:
+                anti_snowball += 1
+            if team_200['win'] == 'Win' and team_200['firstTower'] == False:
+                anti_snowball += 1
+
+
+    print("1st turret + win + <= %.2f minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (round(length_limit/60, 2), snowball, n_games, round(snowball/n_games*100, 2)))
+    print("not 1st turret + win + <= %.2f minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (round(length_limit/60, 2), anti_snowball, n_games, round(anti_snowball/n_games*100, 2)))
         
-        if team_100['win'] == 'Win' and team_100['firstTower'] == False and game_length <= 1500:
-            anti_snowball += 1
-        if team_200['win'] == 'Win' and team_200['firstTower'] == False and game_length <= 1500:
-            anti_snowball += 1
-
-
-    print("1st turret + win + <= 25 minutes: %d, Games analyzed: %d, Ratio %f %%" % (snowball, counter, snowball/counter*100))
-    print("not 1st turret + win + <= 25 minutes: %d, Games analyzed: %d, Ratio %f %%" % (anti_snowball, counter, anti_snowball/counter*100))
-
-    # matplotlib histogram
-    
-    plt.hist(game_lengts, color = 'blue', edgecolor = 'black',
-         bins = int(3400/25))
-
-    # # seaborn histogram
-    # sns.distplot(flights['arr_delay'], hist=True, kde=False, 
-    #             bins=int(180/5), color = 'blue',
-    #             hist_kws={'edgecolor':'black'})
-    # Add labels
-    plt.title('Histogram of Game Lengths')
-    plt.xlabel('Game Length (sec)')
-    plt.ylabel('Games')
-        
+    print("50th percentile of game length: %.2f, average: %.2f " % (round(np.percentile(game_lengths, 50), 2), round(np.average(game_lengths), 2)))
 
     db.close_connection(database_connection)
 

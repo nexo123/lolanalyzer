@@ -1,9 +1,10 @@
-{
-    "summoner_by_name": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/",
-    "matchhistory": "https://euw1.api.riotgames.com/lol/match/v4/matchlists/by-account/",
-    "matchdetail": "https://euw1.api.riotgames.com/lol/match/v4/matches/",
-    "matchtimeline": "https://euw1.api.riotgames.com/lol/match/v4/timelines/by-match/",
+{ 
+    "match_history": "https://euw1.api.riotgames.com/lol/match/v4/matchlists/by-account/",
+    "match_details": "https://euw1.api.riotgames.com/lol/match/v4/matches/",
+    "match_timeline": "https://euw1.api.riotgames.com/lol/match/v4/timelines/by-match/",
+	"summoner_by_name": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/",
 	"summoner_by_summonerId": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/",
 	"summoner_by_accountId": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-account/",
-	"summoner_by_PUUID": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/"
+	"summoner_by_PUUID": "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/",
+	"ranked_by_summonerId": "https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/"
 }

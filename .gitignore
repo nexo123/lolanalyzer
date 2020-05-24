@@ -9,8 +9,8 @@ __pycache__/
 # User defined files
 *.exe
 *.db
-*.ini
-*.ini.dist
+*.ini*
+*.csv
 
 # VisualStudioCode
 .vscode/

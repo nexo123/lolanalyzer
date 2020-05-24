@@ -45,6 +45,9 @@ sql_patricipants_table = """CREATE TABLE IF NOT EXISTS participants (
                             summonerId text NOT NULL,
                             summonerLevel int NOT NULL,
                             timestamp int NOT NULL,
+                            ranking text NOT NULL,
+                            wins int NOT NULL,
+                            losses int NOT NULL,
                             FOREIGN KEY (matchId) REFERENCES matches (gameId),
                             FOREIGN KEY (summonerId) REFERENCES summoners (summonerId)
                         ); """
@@ -120,7 +123,7 @@ def add_match(conn, match_data):
 def add_participant(conn, participant_data):
     try:
         c = conn.cursor()
-        sql = """INSERT INTO participants VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+        sql = """INSERT INTO participants VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         c.execute(sql, participant_data)
         conn.commit()
         return c.lastrowid
@@ -145,11 +148,11 @@ def get_max_of(conn, what):
 def get_summoner(conn, summoner_id):
     try:
         c = conn.cursor()
-        sql = """SELECT summoner_id FROM summoners WHERE summonerId = "{}";""".format(summoner_id)
+        sql = """SELECT * FROM summoners WHERE summonerId = "{}";""".format(summoner_id)
         c.execute(sql)
         rows = c.fetchall()
         if len(rows) > 0:
-            return rows[0][0]
+            return rows
         else:
             return -1
     except Error as e:
@@ -184,10 +187,37 @@ def get_missing_timelines(conn):
         print(e)
         return -1
 
+def get_missing_ranks(conn):
+    try:
+        c = conn.cursor()
+        sql = """SELECT p.summonerId, p.matchId FROM participants p WHERE ranking = "Unavailable";"""
+        c.execute(sql)
+        rows = c.fetchall()
+        if len(rows) > 0:
+            return rows
+        else:
+            return -1
+    except Error as e:
+        print(e)
+        return -1
+
 def update_timeline(conn, matchId, timeline):
     try:
         c = conn.cursor()
         sql = """UPDATE matches SET timeline = "{}" WHERE gameId = {};""".format(timeline, matchId)
+        rows = c.execute(sql).rowcount
+        conn.commit()
+        return rows
+    except Error as e:
+        print(e)
+        return -1
+
+def update_ranking(conn, summoner_id, match_id, ranking, wins, losses):
+    try:
+        c = conn.cursor()
+        sql = """UPDATE participants
+                SET ranking = "{}", wins = {}, losses = {}
+                WHERE summonerId = "{}" AND matchId = {};""".format(ranking, wins, losses, summoner_id, match_id)
         rows = c.execute(sql).rowcount
         conn.commit()
         return rows
