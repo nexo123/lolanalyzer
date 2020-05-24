@@ -19,7 +19,7 @@ def get_data(conn):
         print(e)
         return -1
 
-def get_stats(conn):
+def get_stats(conn, summoner_name):
     try:
         c = conn.cursor()
         sql = """SELECT p.stats
@@ -28,9 +28,9 @@ def get_stats(conn):
                 (
                     SELECT s.summonerId
                     FROM summoners s
-                    WHERE name = "Clumsy Void Girl"
+                    WHERE name = "{}"
                 )
-                ORDER BY p.timestamp DESC;"""
+                ORDER BY p.timestamp DESC;""".format(summoner_name)
         c.execute(sql)
         return c.fetchall()
     except Error as e:
@@ -102,8 +102,8 @@ def check_levels():
     config = configparser.ConfigParser()
     config.read('config.ini')
     database_connection = db.create_connection((config['DATABASE']['name'] + '.db'))
-
-    data = get_stats(database_connection)
+    summoner_name = config['PARMS']['summoner']
+    data = get_stats(database_connection, summoner_name)
 
     levels = []
 
