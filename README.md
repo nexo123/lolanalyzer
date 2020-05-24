@@ -1,5 +1,5 @@
 # lolanalyzer
-
+Simple project aimed at analyzing random stuff about my league of legends match history and learning python/sql.
 ### config.ini file required, create with following structure
 
 [API]
