@@ -64,7 +64,7 @@ def print_to_csv(true_smurfs, database_connection):
     }
 
     df = pd.DataFrame(data, columns=['Name', 'Level', 'Rank'])
-    df.to_csv(r'E:\Users\dmaza\Documents\LoLanalyzer\smurfs.csv', index = False, header=True)
+    df.to_csv(r'smurfs.csv', index = False, header=True)
 
 
 def main():
