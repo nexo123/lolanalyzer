@@ -113,7 +113,7 @@ def check_levels():
 
     nth_percentile = 75
 
-    growth = 5
+    growth = 2
     base = 30
 
     diffs = [(n, scaling(base, growth, n)) for n in range(1, 19)]

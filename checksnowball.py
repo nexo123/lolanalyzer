@@ -59,7 +59,7 @@ def main():
     print("1st turret + win + <= %.2f minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (round(length_limit/60, 2), snowball, n_games, round(snowball/n_games*100, 2)))
     print("not 1st turret + win + <= %.2f minutes: %d, Games analyzed: %d, Ratio %.2f %%" % (round(length_limit/60, 2), anti_snowball, n_games, round(anti_snowball/n_games*100, 2)))
         
-    print("67th percentile of game length: %.2f, average: %.2f " % (round(np.percentile(game_lengths, 67), 2), round(np.average(game_lengths), 2)))
+    print("50th percentile of game length: %.2f, average: %.2f " % (round(np.percentile(game_lengths, 50), 2), round(np.average(game_lengths), 2)))
 
     db.close_connection(database_connection)
 

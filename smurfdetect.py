@@ -13,7 +13,7 @@ def get_teammates(conn):
         sql = """SELECT (p.timestamp - m.gameCreation) as diff, p.summonerId, p.summonerLevel, p.ranking, p.wins, p.losses, p.matchId
                     FROM participants p
                     JOIN matches m ON p.matchId = m.gameId
-                    WHERE p.summonerId NOT IN ("2bt1NSSLsLBiXmgr4-VcGq-hl6na5GU5z7P0y94WTVwk0Go", "Sx_lzxM6YsTpezdNHt5AxQ7Cb2yqYMA9P1PbknusSmX1izo")
+                    WHERE p.summonerId NOT IN ("2bt1NSSLsLBiXmgr4-VcGq-hl6na5GU5z7P0y94WTVwk0Go", "Sx_lzxM6YsTpezdNHt5AxQ7Cb2yqYMA9P1PbknusSmX1izo", "N45DLjWOeIle0rCzr1sFsgqDF8iU_0zC5bdfriYbDoOcYwY")
                     ORDER BY diff ASC;"""
         c.execute(sql)
         return c.fetchall()
@@ -29,7 +29,7 @@ def get_data_age_diff(conn):
                 SELECT (p.timestamp - m.gameCreation) as diff
                 FROM participants p
                 JOIN matches m ON p.matchId = m.gameId
-                WHERE p.summonerId NOT IN ("2bt1NSSLsLBiXmgr4-VcGq-hl6na5GU5z7P0y94WTVwk0Go", "Sx_lzxM6YsTpezdNHt5AxQ7Cb2yqYMA9P1PbknusSmX1izo")
+                WHERE p.summonerId NOT IN ("2bt1NSSLsLBiXmgr4-VcGq-hl6na5GU5z7P0y94WTVwk0Go", "Sx_lzxM6YsTpezdNHt5AxQ7Cb2yqYMA9P1PbknusSmX1izo", "N45DLjWOeIle0rCzr1sFsgqDF8iU_0zC5bdfriYbDoOcYwY")
                 ) t1"""
         c.execute(sql)
         return c.fetchall()
@@ -48,6 +48,24 @@ def get_match_count(conn):
         print(e)
         return -1
 
+def print_to_csv(true_smurfs, database_connection):
+    names = []
+    levels = []
+    ranks = []
+    for smurf in true_smurfs:
+        ranks.append(smurf[3])
+        levels.append(smurf[2])
+        names.append(db.get_summoner(database_connection, smurf[1])[0][1])
+    
+    data = {
+        'Name': names,
+        'Level': levels,
+        'Rank': ranks
+    }
+
+    df = pd.DataFrame(data, columns=['Name', 'Level', 'Rank'])
+    df.to_csv(r'E:\Users\dmaza\Documents\LoLanalyzer\smurfs.csv', index = False, header=True)
+
 
 def main():
     config = configparser.ConfigParser()
@@ -56,7 +74,7 @@ def main():
     # database_connection = db.create_connection("season2020_lProfessor.db")
 
     lvl_treshold_high = 75
-    lvl_treshold_low = 50
+    lvl_treshold_low = 65
     smurfs_count = 0
     counter = 0
     smurfs = []
@@ -103,7 +121,7 @@ def main():
         else:
             games_played = smurf[4] + smurf[5]
             winrate = smurf[4]/games_played
-            if winrate >= 0.55:
+            if winrate >= 0.57:
                 true_smurfs.append(smurf)
 
     match_count = get_match_count(database_connection)
@@ -116,24 +134,7 @@ def main():
     unique_games = list(dict.fromkeys(games))
 
     print("Smurfs found: %d, Smurf games: %d, Games: %d, Smurfs to games ratio: 1/%f" % (len(true_smurfs), len(unique_games), match_count[0][0], match_count[0][0]/len(true_smurfs)))
-
-    names = []
-    levels = []
-    ranks = []
-    for smurf in true_smurfs:
-        ranks.append(smurf[3])
-        levels.append(smurf[2])
-        names.append(db.get_summoner(database_connection, smurf[1])[0][1])
-    
-    data = {
-        'Name': names,
-        'Level': levels,
-        'Rank': ranks
-    }
-
-    df = pd.DataFrame(data, columns=['Name', 'Level', 'Rank'])
-    df.to_csv(r'E:\Users\dmaza\Documents\LoLanalyzer\smurfs.csv', index = False, header=True)
-
+    # print_to_csv(true_smurfs, database_connection)
     db.close_connection(database_connection)
 
 if __name__ == '__main__':

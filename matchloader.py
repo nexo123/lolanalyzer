@@ -110,13 +110,14 @@ def main():
         # Main loop starts here 
         while not end:
             progress_log.info("Getting matches between {} and {}.".format(b_index, e_index))
-            matches = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')['matches']
+            data = API.get_match_history(summoner_info['accountId'], queue='420', beginIndex=str(b_index), endIndex=str(e_index), season='13')
             time.sleep(1.4)
 
-            if matches is None:
+            if data is None:
                 progress_log.error("Getting matches between {} and {} failed!".format(b_index, e_index))
                 break
             else:
+                matches = data['matches']
                 for match in matches:
                     progress_log.info("Working on match {}...".format(match['gameId']))
 
@@ -261,7 +262,7 @@ def fix_ranks():
 
         if ranked_info is None:
             progress_log.warning("Getting summoner ranked info for summoner {} failed!".format(summoner[0]))
-            continue
+            continue 
 
         if len(ranked_info) == 0:
             progress_log.warning("Ranked info for summoner {} empty! Treating as unraked!".format(summoner[0]))
@@ -294,4 +295,4 @@ def fix_ranks():
 if __name__ == '__main__':
     main()
     # fix_timelines()
-    # fix_ranks()
+    # fix_ranks() 
